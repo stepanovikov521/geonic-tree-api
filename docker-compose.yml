@@ -5,10 +5,24 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      # Вот здесь происходит магия Bind Mount:
-      # Слева - путь на твоем компе (относительный к этой папке)
-      # Справа - путь внутри контейнера
       - .:/app
     environment:
-      - PYTHONDONTWRITEBYTECODE=1
-      - PYTHONUNBUFFERED=1
+      # Мы добавим переменные окружения для базы данных ниже
+      - DATABASE_URL=postgresql://user:password@db:5432/geonic_db
+    depends_on:
+      - db
+
+  db:
+    image: postgres:15
+    container_name: geonic-tree-db
+    ports:
+      - "5433:5432" # Мы пробрасываем порт 5433, чтобы не было конфликта с твоим локальным Postgres
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: geonic_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
