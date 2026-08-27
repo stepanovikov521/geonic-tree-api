@@ -1,0 +1,14 @@
+services:
+  web:
+    build: .
+    container_name: geonic-tree-app
+    ports:
+      - "8000:8000"
+    volumes:
+      # Вот здесь происходит магия Bind Mount:
+      # Слева - путь на твоем компе (относительный к этой папке)
+      # Справа - путь внутри контейнера
+      - .:/app
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1

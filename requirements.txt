@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+sqlalchemy
+aiosqlite
+pydantic
+pyjwt
+passlib[bcrypt]
+pytest
+httpx
+pyvis
+email-validator
