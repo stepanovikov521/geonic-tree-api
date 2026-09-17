@@ -1,11 +1,14 @@
+import asyncio
+import logging
 from pathlib import Path
 from typing import Literal, overload
 
-import logging
-from core.config import logger
-from database import DataBaseManager
-from models import Relative  # noqa: F401
 from pyvis.network import Network
+
+from core.config import logger
+from db.rep_connection import DataBaseManagerAsync
+from db.rep_relative import RelativeRepository
+from models.models_relative import Relative
 
 script_dir = Path(__file__).resolve().parent
 dtb_path = script_dir / "family_tree.db"
@@ -35,10 +38,10 @@ def true_int_input(text: str = "", allow_empty: bool = False):
             logger.error("Ошибка ввода: введено не число.")
 
 
-def find_relative():
+async def find_relative():
     """Поиск стартового родственника для построения дерева."""
-    dtb = DataBaseManager(dtb_path)
-    selected_relative = ()
+    manager = DataBaseManagerAsync(str(dtb_path))
+    selected_relative = None
 
     logger.info("Вы знаете ID родственника или хотите найти его по ФИО?")
 
@@ -54,7 +57,11 @@ def find_relative():
                 if num_id == 9999:
                     logger.info("Возвращаемся обратно к выбору метода")
                     break
-                selected_relative = dtb.get_relative_by_id(num_id)
+
+                async with manager.get_session() as session:
+                    repo = RelativeRepository(session)
+                    selected_relative = await repo.get_relative_by_id(num_id)
+
                 if selected_relative:
                     return selected_relative
                 logger.warning("Родственник с таким ID не найден!")
@@ -66,28 +73,34 @@ def find_relative():
                 if name_rel == "back":
                     logger.info("Возвращаемся обратно к выбору метода")
                     break
-                selected_relative = dtb.get_relative_by_name(name_rel)
-                if len(selected_relative) == 1:
-                    return selected_relative[0]
-                elif len(selected_relative) > 1:
-                    for index, relative in enumerate(selected_relative, start=1):
+
+                async with manager.get_session() as session:
+                    repo = RelativeRepository(session)
+                    selected_relatives = await repo.get_relative_by_name(name_rel)
+
+                if len(selected_relatives) == 1:
+                    return selected_relatives[0]
+                elif len(selected_relatives) > 1:
+                    for index, relative in enumerate(selected_relatives, start=1):
                         logger.info(
                             f"{index}. ФИО: {relative.last_name} {relative.first_name} {relative.patronymic} Дата рождения: {relative.birth_date}"
                         )
                     choice_rel = true_int_input(
                         "Выберите одного из этих родственников: "
                     )
-                    selected_relative = selected_relative[choice_rel - 1]
-                    return selected_relative
+                    if choice_rel and 1 <= choice_rel <= len(selected_relatives):
+                        return selected_relatives[choice_rel - 1]
+                    else:
+                        logger.warning("Неверный выбор.")
                 else:
                     logger.warning("Ни одного родственника с таким именем!")
 
 
-def generate_family_tree(database):
+async def generate_family_tree(repository: RelativeRepository):
     """Сгенерировать древо родственников с автоматическим расчётом уровней."""
     dict_levels = {}
 
-    start_relative = find_relative()
+    start_relative = await find_relative()
     if not start_relative:
         logger.error("Стартовый родственник не выбран.")
         return
@@ -96,11 +109,14 @@ def generate_family_tree(database):
     start_level = 10
     dict_levels[key_id_rel] = start_level
 
-    all_relatives = database.get_all_relatives()
+    all_relatives = await repository.get_all_relatives()
     queue_order = [key_id_rel]
 
     while len(queue_order) > 0:
-        object_rel_now = database.get_relative_by_id(queue_order.pop(0))
+        object_rel_now = await repository.get_relative_by_id(queue_order.pop(0))
+        if not object_rel_now:
+            continue
+
         id_rel_now = object_rel_now.id
         level_rel_now = dict_levels[id_rel_now]
 
@@ -146,7 +162,6 @@ def generate_family_tree(database):
     """)
 
     # === ШАГ 3: ОТРИСОВКА УЗЛОВ И СВЯЗЕЙ ===
-    # Цикл 1: Добавляем людей (узлы) на экран
     for relative in all_relatives:
         if relative:
             if relative.gender == "М":
@@ -156,7 +171,6 @@ def generate_family_tree(database):
             else:
                 node_color = "#979797"  # Серый, если пол не указан
 
-            # Безопасно берём уровень из словаря, для одиночек ставим 10 по умолчанию
             chosen_level = dict_levels.get(relative.id, 10)
             net.add_node(
                 relative.id,
@@ -165,7 +179,6 @@ def generate_family_tree(database):
                 level=chosen_level,
             )
 
-    # Цикл 2: Рисуем кровные связи (Родители -> Дети)
     for relative in all_relatives:
         if relative:
             if relative.father_id:
@@ -173,20 +186,19 @@ def generate_family_tree(database):
             if relative.mother_id:
                 net.add_edge(relative.mother_id, relative.id)
 
-    # Цикл 3: Рисуем брачные связи (Супруги)
     for relative in all_relatives:
         if relative:
             if relative.spouse_id:
                 net.add_edge(
                     relative.spouse_id,
                     relative.id,
-                    physics=False,  # Запрещаем влиять на иерархию
-                    dashes=True,  # Делаем линию пунктирной
-                    color="#ff1493",  # Розово-красный цвет для супругов
+                    physics=False,
+                    dashes=True,
+                    color="#ff1493",
                     smooth={
                         "type": "curvedCW",
                         "roundness": 0.2,
-                    },  # Легкий изгиб
+                    },
                 )
 
     # === ШАГ 4: СОХРАНЕНИЕ В HTML ===

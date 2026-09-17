@@ -3,6 +3,7 @@ import sys
 from logging.config import fileConfig
 
 from alembic import context
+from sqlalchemy import engine_from_config, pool
 
 # Import the Base class and metadata
 from models.class_Base import Base
@@ -11,7 +12,6 @@ from models.class_Base import Base
 # Using explicit imports instead of '*' is a best practice to avoid namespace pollution.
 from models.models_relative import Relative
 from models.models_user import User
-from sqlalchemy import engine_from_config, pool
 
 # Alembic configuration
 config = context.config

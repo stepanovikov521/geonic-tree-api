@@ -1,6 +1,7 @@
-from models.class_Base import Base
 from sqlalchemy import Integer, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+from models.class_Base import Base
 
 
 class User(Base):

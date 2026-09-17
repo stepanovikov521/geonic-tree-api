@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 
 from api.dependencies import get_user_repository
+from core.exceptions import AppError, EntityNotFoundError, UnauthorizedError
 from db.rep_user import UserRepository
 from models.models_user import User
 from schemas.auth import (
@@ -11,7 +12,6 @@ from schemas.auth import (
     UserRegisterSchema,
 )
 from services.auth_service import AuthService
-from core.exceptions import AppException, EntityNotFoundException, UnauthorizedException
 
 router = APIRouter(prefix="/auth", tags=["Аутентификация"])
 
@@ -26,17 +26,17 @@ async def get_current_user(
     """Dependency: проверяет JWT и возвращает текущего пользователя."""
     payload = AuthService.decode_token(token)
     if not payload:
-        raise UnauthorizedException("Невалидный или просроченный токен")
+        raise UnauthorizedError("Невалидный или просроченный токен")
 
     user_id = payload.get("sub")
     if not user_id:
-        raise UnauthorizedException("Токен не содержит ID пользователя")
+        raise UnauthorizedError("Токен не содержит ID пользователя")
 
     user = await user_rep.get_by_id(int(user_id))
     if not user:
-        from core.exceptions import EntityNotFoundException
+        from core.exceptions import EntityNotFoundError
 
-        raise EntityNotFoundException("Пользователь", int(user_id))
+        raise EntityNotFoundError("Пользователь", int(user_id))
 
     return UserOutSchema.model_validate(user)
 
@@ -49,7 +49,7 @@ async def register(
     """Регистрация нового пользователя."""
     existing_user = await user_rep.get_by_email(user_data.email)
     if existing_user:
-        raise AppException("Пользователь с таким email уже существует", status_code=400)
+        raise AppError("Пользователь с таким email уже существует", status_code=400)
 
     hashed_pwd = AuthService.hash_password(user_data.password)
     new_user = await user_rep.create_user(
@@ -69,7 +69,7 @@ async def login(
     if not user or not AuthService.verify_password(
         credentials.password, user.hashed_password
     ):
-        raise UnauthorizedException("Неверный email или пароль")
+        raise UnauthorizedError("Неверный email или пароль")
 
     token = AuthService.create_access_token(data={"sub": str(user.id)})
     return {"access_token": token, "token_type": "bearer"}

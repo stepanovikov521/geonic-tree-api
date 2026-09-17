@@ -1,11 +1,13 @@
 import os
+from contextlib import asynccontextmanager
 
-from models.class_Base import Base
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
     create_async_engine,
 )
+
+from models.class_Base import Base
 
 
 class DataBaseManagerAsync:
@@ -44,6 +46,7 @@ class DataBaseManagerAsync:
         async with self.async_engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
 
+    @asynccontextmanager
     async def get_session(self):
         """Создание сессии для подключения."""
         async with self.AsyncSessionLocal() as session:

@@ -9,7 +9,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from api.api_auth import router as auth_router
 from api.api_relatives import router as relatives_router
 from core.config import logger
-from core.exceptions import AppException
+from core.exceptions import AppError
 from db.rep_connection import DataBaseManagerAsync
 
 
@@ -36,8 +36,9 @@ app.include_router(auth_router)
 
 
 # Глобальный обработчик кастомных ошибок
-@app.exception_handler(AppException)
-async def app_exception_handler(request: Request, exc: AppException):
+@app.exception_handler(AppError)
+async def app_exception_handler(request: Request, exc: AppError):
+    """Обработчик кастомных ошибок приложения."""
     logger.error(f"Ошибка приложения: {exc.message}")
     return JSONResponse(
         status_code=exc.status_code,
