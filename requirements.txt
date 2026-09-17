@@ -9,3 +9,4 @@ pytest
 httpx
 pyvis
 email-validator
+asyncpg

@@ -9,6 +9,7 @@ from services.auth import (
 
 
 def test_security_flow():
+    """."""
     print("=== 1. ТЕСТ ХЕШИРОВАНИЯ ПАРОЛЯ ===")
     user_password = "MyStrongPassword123!"
 
@@ -42,7 +43,7 @@ def test_security_flow():
     # Симуляция атаки: подделка токена
     print("=== 3. ТЕСТ ПОДДЕЛКИ ТОКЕНА (АТАКА) ===")
     # Разбиваем токен на 3 части по точкам
-    header, payload, signature = token.split(".")
+    header, payload, _ = token.split(".")
 
     # Подменяем сигнатуру на случайный мусор
     tampered_token = f"{header}.{payload}.fake_signature_12345"

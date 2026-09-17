@@ -4,8 +4,9 @@ from typing import Optional
 import jwt
 from passlib.context import CryptContext
 
-# 1. Настройки безопасности (в реальном проекте берутся из .env)
-SECRET_KEY = "SUPER_SECRET_KEY_CHANGE_ME_IN_PRODUCTION"  # Ключ для подписи JWT
+from core.config import settings
+
+SECRET_KEY = settings.secret_key.get_secret_value()
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 

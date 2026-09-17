@@ -11,17 +11,25 @@ from sqlalchemy.ext.asyncio import (
 class DataBaseManagerAsync:
     """Асинхронный класс базы данных."""
 
-    def __init__(self) -> None:
+    def __init__(self, db_url: str | None = None) -> None:
         """."""
-        # 1. Берем строку подключения из переменных окружения (которые мы прописали в docker-compose.yml)
-        # Если переменная не задана, используем путь к SQLite по умолчанию (для работы вне Docker)
-        db_url = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./family_tree.db")
+        # 1. Логика выбора URL:
+        # Если мы в тестах и передали путь (например, "sqlite:///test.db"), используем его.
+        # Если мы в Docker и передали DATABASE_URL через переменные окружения — используем его.
+        # Если ничего не передано — используем стандартный SQLite локально.
 
-        # 2. Создаем движок. SQLAlchemy сам поймет, что если в строке есть postgresql,
-        # то нужно использовать нужный драйвер.
+        if db_url:
+            self.db_url = db_url
+        else:
+            self.db_url = os.getenv(
+                "DATABASE_URL", "sqlite+aiosqlite:///./family_tree.db"
+            )
+
+        # 2. Создаем движок
+        # Важно: SQLAlchemy сам поймет, что делать, если в строке есть postgresql или sqlite
         self.async_engine = create_async_engine(
-            db_url,
-            echo=False,  # Поставь True, если захочешь видеть SQL-запросы в логах Docker
+            self.db_url,
+            echo=False,  # Включи True на время отладки SQL запросов в Docker
         )
 
         self.AsyncSessionLocal = async_sessionmaker(

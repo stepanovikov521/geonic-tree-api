@@ -1,8 +1,9 @@
 from pathlib import Path
 
 import pytest
-from db.create_db import create_db_from_path
 from httpx import ASGITransport, AsyncClient
+
+from db.create_db import create_db_from_path
 from services.main_API_async import app
 
 script_path = Path(__file__).resolve().parent
@@ -56,7 +57,7 @@ async def test_get_non_existent_relative(async_client: AsyncClient):
     """Тест поиска несуществующего родственника."""
     response = await async_client.get("/relatives/9999")
     assert response.status_code == 404
-    assert response.json() == {"detail": "Родственник не найден"}
+    assert response.json() == {"detail": "Родственник с ID 9999 не найден"}
 
 
 @pytest.mark.asyncio

@@ -8,7 +8,7 @@ services:
       - .:/app
     environment:
       # Мы добавим переменные окружения для базы данных ниже
-      - DATABASE_URL=postgresql://user:password@db:5432/geonic_db
+      - DATABASE_URL=postgresql+asyncpg://user:password@db:5432/geonic_db
     depends_on:
       - db
 

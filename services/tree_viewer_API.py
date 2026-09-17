@@ -1,6 +1,8 @@
 from pathlib import Path
 from typing import Literal, overload
 
+import logging
+from core.config import logger
 from database import DataBaseManager
 from models import Relative  # noqa: F401
 from pyvis.network import Network
@@ -26,11 +28,11 @@ def true_int_input(text: str = "", allow_empty: bool = False):
             if user_input == "":
                 if allow_empty:
                     return None
-                print("Это поле не может быть пустым! Введите число.")
+                logger.warning("Пользователь оставил поле пустым при вводе числа.")
             else:
                 return int(user_input)
         except ValueError:
-            print("Только цифры, никаких букв.")
+            logger.error("Ошибка ввода: введено не число.")
 
 
 def find_relative():
@@ -38,7 +40,7 @@ def find_relative():
     dtb = DataBaseManager(dtb_path)
     selected_relative = ()
 
-    print("Вы знаете ID родственника или хотите найти его по ФИО?")
+    logger.info("Вы знаете ID родственника или хотите найти его по ФИО?")
 
     while True:
         choice_method = true_int_input(
@@ -50,26 +52,26 @@ def find_relative():
                     "Введите номер id или (9999) чтобы вернуться назад: "
                 )
                 if num_id == 9999:
-                    print("Возвращаемся обратно к выбору метода")
+                    logger.info("Возвращаемся обратно к выбору метода")
                     break
                 selected_relative = dtb.get_relative_by_id(num_id)
                 if selected_relative:
                     return selected_relative
-                print("Родственник с таким ID не найден!")
+                logger.warning("Родственник с таким ID не найден!")
         elif choice_method == 2:
             while True:
                 name_rel = input(
                     "Введите имя родственника или (back) чтобы вернуться назад: "
                 )
                 if name_rel == "back":
-                    print("Возвращаемся обратно к выбору метода")
+                    logger.info("Возвращаемся обратно к выбору метода")
                     break
                 selected_relative = dtb.get_relative_by_name(name_rel)
                 if len(selected_relative) == 1:
                     return selected_relative[0]
                 elif len(selected_relative) > 1:
                     for index, relative in enumerate(selected_relative, start=1):
-                        print(
+                        logger.info(
                             f"{index}. ФИО: {relative.last_name} {relative.first_name} {relative.patronymic} Дата рождения: {relative.birth_date}"
                         )
                     choice_rel = true_int_input(
@@ -78,7 +80,7 @@ def find_relative():
                     selected_relative = selected_relative[choice_rel - 1]
                     return selected_relative
                 else:
-                    print("Ни одного родственника с таким именем!")
+                    logger.warning("Ни одного родственника с таким именем!")
 
 
 def generate_family_tree(database):
@@ -87,7 +89,7 @@ def generate_family_tree(database):
 
     start_relative = find_relative()
     if not start_relative:
-        print("Стартовый родственник не выбран.")
+        logger.error("Стартовый родственник не выбран.")
         return
 
     key_id_rel = start_relative.id
@@ -190,4 +192,4 @@ def generate_family_tree(database):
     # === ШАГ 4: СОХРАНЕНИЕ В HTML ===
     tree_html = script_dir / "family_tree.html"
     net.write_html(str(tree_html))
-    print(f"Древо успешно сгенерировано и сохранено в файл: {tree_html}")
+    logger.info(f"Древо успешно сгенерировано и сохранено в файл: {tree_html}")

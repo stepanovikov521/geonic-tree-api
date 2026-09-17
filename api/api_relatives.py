@@ -1,6 +1,8 @@
+from fastapi import APIRouter, Depends, HTTPException, status
+
 from api.dependencies import get_rel_repository
+from core.exceptions import AppException, EntityNotFoundException
 from db.rep_relative import RelativeRepository
-from fastapi import APIRouter, Depends, HTTPException
 from schemas.relative import ModelOfRelative, ModelOfRelativeUpdate
 
 router = APIRouter(prefix="/relatives", tags=["Родственники"])
@@ -13,7 +15,7 @@ async def read_root_rel_id(
     """Поиск родственника по id."""
     id_rel = await rel_rep.get_relative_by_id(relative_id)
     if not id_rel:
-        raise HTTPException(status_code=404, detail="Родственник не найден")
+        raise EntityNotFoundException("Родственник", relative_id)
 
     return id_rel
 
@@ -47,12 +49,10 @@ async def update_rel(
     """Обновление данных родственника."""
     person_dict = person.model_dump(exclude_unset=True)
     if not person_dict:
-        raise HTTPException(
-            status_code=400, detail="Не введены изменения для родственника."
-        )
+        raise AppException("Не введены изменения для родственника.", status_code=400)
     updated_person = await rel_rep.update_relative(relative_id, person_dict)
     if updated_person is None:
-        raise HTTPException(status_code=404, detail="Родственник не найден.")
+        raise EntityNotFoundException("Родственник", relative_id)
     return updated_person
 
 
@@ -63,5 +63,5 @@ async def delete_rel(
     """Удаление родственника."""
     deleted_rel = await rel_rep.delete_relative_id(relative_id)
     if deleted_rel is None:
-        raise HTTPException(status_code=404, detail="Родственник не найден.")
+        raise EntityNotFoundException("Родственник", relative_id)
     return {"message": f"Родственник с ID {relative_id} успешно удален из древа"}

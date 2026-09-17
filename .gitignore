@@ -1,0 +1,25 @@
+# Секреты и конфиги окружения
+.env
+.env.*
+!.env.example
+
+# Кэш Python и тестов
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Виртуальные окружения
+.venv/
+venv/
+ENV/
+
+# Локальные базы данных (если вдруг создавались локально)
+*.sqlite
+*.sqlite3
+*.db
+
+# Файлы IDE и операционной системы
+.vscode/
+.idea/
+.DS_Store

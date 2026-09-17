@@ -1,3 +1,5 @@
+import logging
+from core.config import logger
 from models.models_relative import Relative
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -61,8 +63,8 @@ class RelativeRepository:
             await self.session.refresh(relative_obj)
             return relative_obj
         else:
-            print("Такого родственника нет.")
-            return
+            logger.warning(f"Родственник с ID {relative_id} не найден при обновлении")
+            return None
 
     async def get_all_relatives(self):
         """."""

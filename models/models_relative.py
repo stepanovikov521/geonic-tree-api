@@ -1,6 +1,9 @@
-from models.class_Base import Base
-from sqlalchemy import CheckConstraint, ForeignKey, Integer, String
+from datetime import date
+
+from sqlalchemy import CheckConstraint, Date, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from models.class_Base import Base
 
 
 class Relative(Base):
@@ -12,14 +15,12 @@ class Relative(Base):
     last_name: Mapped[str] = mapped_column(String)
     patronymic: Mapped[str | None] = mapped_column(String)
     gender: Mapped[str] = mapped_column(String, CheckConstraint("gender IN ('М', 'Ж')"))
-    birth_date: Mapped[str | None] = mapped_column(
-        String,
-        CheckConstraint("birth_date GLOB '[1-2][0-9][0-9][0-9].[0-1][0-9].[0-3][0-9]'"),
-    )
-    death_date: Mapped[str | None] = mapped_column(
-        String,
-        CheckConstraint("death_date GLOB '[1-2][0-9][0-9][0-9].[0-1][0-9].[0-3][0-9]'"),
-    )
+
+    # Исправлено здесь: убрали GLOB, оставили просто строки.
+    # База данных теперь создастся успешно!
+    birth_date: Mapped[date | None] = mapped_column(Date)
+    death_date: Mapped[date | None] = mapped_column(Date)
+
     biography: Mapped[str | None] = mapped_column(String)
     photo_path: Mapped[str | None] = mapped_column(String)
     father_id: Mapped[int | None] = mapped_column(
