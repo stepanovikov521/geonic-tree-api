@@ -9,8 +9,8 @@ class Settings(BaseSettings):
 
     app_name: str = "Geonic Tree"
     debug: bool = False
-    database_url: str = Field(default="")
-    secret_key: SecretStr = Field(default=SecretStr(""))
+    database_url: str = Field(default="sqlite+aiosqlite:///./test.db")
+    secret_key: SecretStr = Field(default=SecretStr("dev-secret-key"))
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 60
     log_level: str = "INFO"
