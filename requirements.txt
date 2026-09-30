@@ -12,4 +12,5 @@ httpx
 pyvis
 email-validator
 asyncpg
+alembic
 greenlet
